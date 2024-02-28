@@ -81,7 +81,7 @@ class DataSettings(BaseModel):
 
 
 class LLMSettings(BaseModel):
-    mode: Literal["local", "openai", "openailike", "sagemaker", "mock"]
+    mode: Literal["local", "openai", "openailike", "sagemaker", "mock", "ollama"]
     max_new_tokens: int = Field(
         256,
         description="The maximum number of token that the LLM is authorized to generate in one completion.",
@@ -101,7 +101,7 @@ class LLMSettings(BaseModel):
 
 
 class VectorstoreSettings(BaseModel):
-    database: Literal["chroma", "qdrant"]
+    database: Literal["chroma", "qdrant", "pgvector"]
 
 
 class LocalSettings(BaseModel):
@@ -110,13 +110,14 @@ class LocalSettings(BaseModel):
     embedding_hf_model_name: str = Field(
         description="Name of the HuggingFace model to use for embeddings"
     )
-    prompt_style: Literal["default", "llama2", "tag"] = Field(
+    prompt_style: Literal["default", "llama2", "tag", "mistral", "chatml"] = Field(
         "llama2",
         description=(
             "The prompt style to use for the chat engine. "
             "If `default` - use the default prompt style from the llama_index. It should look like `role: message`.\n"
             "If `llama2` - use the llama2 prompt style from the llama_index. Based on `<s>`, `[INST]` and `<<SYS>>`.\n"
             "If `tag` - use the `tag` prompt style. It should look like `<|role|>: message`. \n"
+            "If `mistral` - use the `mistral prompt style. It shoudl look like <s>[INST] {System Prompt} [/INST]</s>[INST] { UserInstructions } [/INST]"
             "`llama2` is the historic behaviour. `default` might work better with your custom models."
         ),
     )
@@ -167,6 +168,17 @@ class OpenAISettings(BaseModel):
     )
 
 
+class OllamaSettings(BaseModel):
+    api_base: str = Field(
+        "http://localhost:11434",
+        description="Base URL of Ollama API. Example: 'https://localhost:11434'.",
+    )
+    model: str = Field(
+        None,
+        description="Model to use. Example: 'llama2-uncensored'.",
+    )
+
+
 class UISettings(BaseModel):
     enabled: bool
     path: str
@@ -176,6 +188,47 @@ class UISettings(BaseModel):
     )
     default_query_system_prompt: str = Field(
         None, description="The default system prompt to use for the query mode."
+    )
+    delete_file_button_enabled: bool = Field(
+        True, description="If the button to delete a file is enabled or not."
+    )
+    delete_all_files_button_enabled: bool = Field(
+        False, description="If the button to delete all files is enabled or not."
+    )
+
+
+class PGVectorSettings(BaseModel):
+    host: str = Field(
+        "localhost",
+        description="The server hosting the Postgres database",
+    )
+    port: int = Field(
+        5432,
+        description="The port on which the Postgres database is accessible",
+    )
+    user: str = Field(
+        "postgres",
+        description="The user to use to connect to the Postgres database",
+    )
+    password: str = Field(
+        "postgres",
+        description="The password to use to connect to the Postgres database",
+    )
+    database: str = Field(
+        "postgres",
+        description="The database to use to connect to the Postgres database",
+    )
+    embed_dim: int = Field(
+        384,
+        description="The dimension of the embeddings stored in the Postgres database",
+    )
+    schema_name: str = Field(
+        "public",
+        description="The name of the schema in the Postgres database where the embeddings are stored",
+    )
+    table_name: str = Field(
+        "embeddings",
+        description="The name of the table in the Postgres database where the embeddings are stored",
     )
 
 
@@ -242,8 +295,10 @@ class Settings(BaseModel):
     local: LocalSettings
     sagemaker: SagemakerSettings
     openai: OpenAISettings
+    ollama: OllamaSettings
     vectorstore: VectorstoreSettings
     qdrant: QdrantSettings | None = None
+    pgvector: PGVectorSettings | None = None
 
 
 """
